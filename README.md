@@ -1,6 +1,7 @@
 # Plurality Points
 
-This repository contains the slides and some code for a seminar talk I gave about the paper [1]. 
+This repository contains the [slides](./presentation/presentation.pdf) and some code for a seminar talk I gave 
+about the paper [1]. 
 
 ## Bibliography
 
