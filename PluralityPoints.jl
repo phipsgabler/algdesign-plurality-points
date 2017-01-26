@@ -9,67 +9,12 @@ using PyPlot
 using Distributions
 
 import Base
+include("geometry.jl")
 
-
-export Point, verify_candidates, internal_tangent_intersection, tukeydepth
+export Point, Rectangle
+export verify_candidates, internal_tangent_intersection, tukeydepth
 export plurality_points
     
-
-typealias Float Float64
-    
-immutable Point
-    x::Float
-    y::Float
-end
-
-
-Base.hash(p::Point, h::UInt) = hash(hash(p.x, hash(p.y)), h)
-
-Base.isequal(p::Point, q::Point) = isequal(p.x, q.x) && isequal(p.y, q.y)
-
-Base.isapprox(p::Point, q::Point; rtol::Real = sqrt(eps(Float)), atol::Real = 0) = 
-    isapprox(p.x, q.x; rtol = rtol, atol = atol) && isapprox(p.y, q.y; rtol = rtol, atol = atol)
-
-Base.show(io::IO, p::Point) = Base.print(io, "($(p.x), $(p.y))")
-
-
-Base.:+(p::Point, q::Point)::Point = Point(p.x + q.x, p.y + q.y)
-Base.:-(p::Point, q::Point)::Point = Point(p.x - q.x, p.y - q.y)
-Base.:*(alpha::Real, q::Point)::Point = Point(alpha * q.x, alpha * q.y)
-Base.:*(p::Point, α::Real)::Point = α * p
-Base.:/(p::Point, α::Real)::Point = inv(α) * p
-
-Base.norm(p::Point)::Float = sqrt(p.x ^ 2 + p.y ^ 2)
-
-distance(p::Point, q::Point)::Float = norm(p - q)
-
-
-
-iscollinear(::Point) = true
-
-iscollinear(::Point, ::Point) = true
-
-function iscollinear(x::Point, y::Point, z::Point)::Bool
-    # http://math.stackexchange.com/a/59248/31127
-    M = ones(Float, 3, 3)
-    for (i, p) in enumerate([x, y, z])
-        M[i, 2:3] = [p.x, p.y]
-    end
-    
-    area = det(M) / 2
-    area ≈ 0
-end
-
-"""
-    iscollinear(ps::Point...)
-
-Determine if all points in `ps` are collinear.  No point counts as collinear.
-"""
-function iscollinear(ps::Point...)::Bool
-    triplets = zip(ps, ps[2:end], ps[3:end])
-    all(iscollinear(x, y, z) for (x, y, z) in triplets)
-end
-
 
 """
     select(xs::Array, i::Integer, parts::Int = 5)::T
@@ -296,6 +241,27 @@ function internal_tangent(A, B, direction::Symbol)::Nullable{Tuple{Float, Float}
     end
 end
 
+
+"""
+    internal_tangent_intersection(A::Vector{Point}, B::Vector{Point})::Nullable{Point}
+
+Compute intersection of the internal tangents of (disjoint and separable) point sets `A` and `B`.
+"""
+function intersect_lines(l1::Tuple{Float, Float}, l2::Tuple{Float, Float})::Nullable{Point}
+    k₁, d₁ = l1
+    k₂, d₂ = l2
+    f = (k₁ - k₂)
+
+    if f != 0
+        x = (d₂ - d₁) / f
+        y = k₁ * x + d₁
+        return Nullable(Point(x, y))
+    else
+        return Nullable{Point}()
+    end
+end
+
+
 """
     internal_tangent_intersection(A::Vector{Point}, B::Vector{Point})::Nullable{Point}
 
@@ -306,13 +272,7 @@ function internal_tangent_intersection(A, B)::Nullable{Point}
     l2 = internal_tangent(A, B, :Min)
     
     if !isnull(l1) && !isnull(l2)
-        k₁, d₁ = get(l1)
-        k₂, d₂ = get(l2)
-        
-        f = (k₁ - k₂)
-        x = (d₂ - d₁) / f
-        y = k₁ * x + d₁
-        return Nullable(Point(x, y))
+        return intersect_lines(get(l1), get(l2))
     else
         return Nullable{Point}()
     end
@@ -322,32 +282,29 @@ end
 verify_candidates(C, V) = filter(p -> tukeydepth(p, V) >= length(V) / 2, C)
 
 
-function plurality_points(V::Vector{Point}; debug = false)
+
+
+function plurality_points(V::Vector{Point})
     n = length(V)
+
+    V_x = [v.x for v in V]
+    V_y = [v.y for v in V]
+    x_h = select(V_x, cld(n + 1, 2))
+    x_l = select(V_x, cld(n, 2))
+    y_h = select(V_y, cld(n + 1, 2))
+    y_l = select(V_y, cld(n, 2))
     
     if iscollinear(V...)
-        p1 = select(V, cld(n, 2))
-        p2 = select(V, cld(n + 1, 2))
-
-        info("Collinear")
-        return (p1, p2)
+        return Rectangle(Point(x_l, y_l), Point(x_h, y_h))
     else
-        V_x = [v.x for v in V]
-        V_y = [v.y for v in V]
-        x_h = select(V_x, cld(n + 1, 2))
-        x_l = select(V_x, cld(n, 2))
-        y_h = select(V_y, cld(n + 1, 2))
-        y_l = select(V_y, cld(n, 2))
         C = Set([Point(x_h, y_h), Point(x_h, y_l), Point(x_l, y_h), Point(x_l, y_l)])
-
+        
         if length(C) == 1
-            info("Unique median corner")
             return verify_candidates(C, V)
         else
             P = verify_candidates(intersect(V, C), V)
             
             if isempty(P)
-                info("Inside C")
                 # not a corner ⇒ Δ ∉ V
                 if x_h ≈ x_l
                     V_a = Set(v for v in V if v.y <= y_l)
@@ -361,14 +318,10 @@ function plurality_points(V::Vector{Point}; debug = false)
                 if isnull(p)
                     error("Something went wrong with intersection...")
                 else
-                    candidate = get(p)
-                    !debug || @show tukeydepth(candidate, V)
-                    !debug || scatter([candidate.x], [candidate.y], marker = "o", color = "g")
-                    return verify_candidates([candidate], V)
+                    return verify_candidates([get(p)], V)
                 end
             else
                 # Δ ∈ V
-                info("Median corner and in V")
                 return P
             end
         end
@@ -376,7 +329,9 @@ function plurality_points(V::Vector{Point}; debug = false)
 end
 
 
-
+####################################################################################################
+# TEST FUNCTIONS
+####################################################################################################
 
 
 function test_select(;trials = 100, size = 20)
@@ -434,10 +389,86 @@ function test_tangent_intersection(;samples = 10, plot = false)
     return i
 end
 
-function test_plurality_point(;samples = 10, plot = false)
+
+function plurality_points_animated(V::Vector{Point})
+    n = length(V)
+
+    V_x = [v.x for v in V]
+    V_y = [v.y for v in V]
+    x_h = select(V_x, cld(n + 1, 2))
+    x_l = select(V_x, cld(n, 2))
+    y_h = select(V_y, cld(n + 1, 2))
+    y_l = select(V_y, cld(n, 2))
+    
+    scatter(V_x, V_y, marker = "o", color = "b")
+    plot([x_l, x_h, x_h, x_l, x_l], [y_l, y_l, y_h, y_h, y_l], color = "k")
+    
+    if iscollinear(V...)
+        info("Collinear")
+    else
+        C = Set([Point(x_h, y_h), Point(x_h, y_l), Point(x_l, y_h), Point(x_l, y_l)])
+
+        if length(C) == 1
+            unique_candidate = collect(C)[1]
+            info("Unique median corner")
+            info("Tukey depth $(tukeydepth(unique_candidate, V)), should be ≥ $(length(V) / 2)")
+            scatter(unique_candidate.x, unique_candidate.y, marker = "x", color = "y")
+            for p in verify_candidates(C, V)
+                scatter(p.x, p.y, marker = "*", color = "r")
+            end
+        else
+            P = verify_candidates(intersect(V, C), V)
+            
+            if isempty(P)
+                info("Inside C")
+                # not a corner ⇒ Δ ∉ V
+                if x_h ≈ x_l
+                    V_a = Set(v for v in V if v.y <= y_l)
+                    V_b = Set(v for v in V if v.y >= y_h)
+                    info("x_h ≈ x_l")
+                else
+                    V_a = Set(v for v in V if v.x <= x_l)
+                    V_b = Set(v for v in V if v.x >= x_h)
+                end
+                
+                l1 = get(internal_tangent(V_a, V_b, :Max))
+                l2 = get(internal_tangent(V_a, V_b, :Min))
+                candidate = get(intersect_lines(l1, l2))
+                scatter(candidate.x, candidate.y, marker = "x", color = "y")
+                
+                info("Tukey depth $(tukeydepth(candidate, V)), should be ≥ $(length(V) / 2)")
+                
+                xmin, xmax, ymin, ymax = axis()
+                xaxis = linspace(xmin, xmax, 100)
+                plot(xaxis, l1[1] * xaxis + l1[2], color = "k")
+                plot(xaxis, l2[1] * xaxis + l2[2], color = "k")
+                
+                for p in verify_candidates([candidate], V)
+                    scatter(p.x, p.y, marker = "*", color = "r")
+                end
+            else
+                # Δ ∈ V
+                info("Median corner and in V")
+                for p in P
+                    scatter(p.x, p.y, marker = "*", color = "r")
+                end
+            end
+        end
+    end
+end
+
+function test_plurality_points1(;samples = 10)
     xs, ys = rand(Float64, samples), rand(Float64, samples)
     points = [Point(x, y) for (x, y) in zip(xs, ys)]
-    pp = plurality_points(points, debug = true)
+    xlim(0, 1)
+    ylim(0, 1)
+    plurality_points_animated(points)
+end
+
+function test_plurality_points2(;samples = 10, plot = false)
+    xs, ys = rand(Float64, samples), rand(Float64, samples)
+    points = [Point(x, y) for (x, y) in zip(xs, ys)]
+    pp = plurality_points(points)
 
     if plot
         scatter(xs, ys, color = "r")
@@ -446,6 +477,8 @@ function test_plurality_point(;samples = 10, plot = false)
     
     return pp
 end
+
+
 
 
 
