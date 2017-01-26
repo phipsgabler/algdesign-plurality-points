@@ -16,7 +16,8 @@ These also include the most important references for understanding the main pape
 
 The file [`depth.f`](./depth.f) contains Fortran code from the R implementation of the algorithm of Rousseeuw and Struyf
 (see [here](https://CRAN.R-project.org/package=depth)), which is licensed under
-[GPL-2](https://cran.r-project.org/web/licenses/GPL-2).
+[GPL-2](https://cran.r-project.org/web/licenses/GPL-2).  I removed the parts of the code which are unneccessary for 
+my purposes.
 
 My code is licensed under the MIT license.  With the slides, do anything you want.
 
