@@ -282,8 +282,6 @@ end
 verify_candidates(C, V) = filter(p -> tukeydepth(p, V) >= length(V) / 2, C)
 
 
-
-
 function plurality_points(V::Vector{Point})
     n = length(V)
 
@@ -318,7 +316,7 @@ function plurality_points(V::Vector{Point})
                 if isnull(p)
                     error("Something went wrong with intersection...")
                 else
-                    return verify_candidates([get(p)], V)
+                    return verify_candidates(Set([get(p)]), V)
                 end
             else
                 # Δ ∈ V
@@ -410,7 +408,7 @@ function plurality_points_animated(V::Vector{Point})
 
         if length(C) == 1
             unique_candidate = collect(C)[1]
-            info("Unique median corner")
+            info("Unique median")
             info("Tukey depth $(tukeydepth(unique_candidate, V)), should be ≥ $(length(V) / 2)")
             scatter(unique_candidate.x, unique_candidate.y, marker = "x", color = "y")
             for p in verify_candidates(C, V)
@@ -463,6 +461,7 @@ function test_plurality_points1(;samples = 10)
     xlim(0, 1)
     ylim(0, 1)
     plurality_points_animated(points)
+    plurality_points(points)
 end
 
 function test_plurality_points2(;samples = 10, plot = false)
@@ -476,6 +475,11 @@ function test_plurality_points2(;samples = 10, plot = false)
     end
     
     return pp
+end
+
+function test_plurality_points3()
+    plurality_points_animated([Point(0.0, 0.0), Point(-1.0, 0.0), Point(-0.5, 0.0),
+                               Point(1.0, 0.0), Point(0.0, -1.0), Point(0.0, 1.0)])
 end
 
 
