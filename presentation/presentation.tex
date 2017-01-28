@@ -190,12 +190,12 @@
       \item Let \(z\) be the midpoint of \(x, y\).  Then for each
         \(c \in \preferers[\succeq]{y}{x}\), \(d(c, z) < d(c, x)\).
       \item Thus, \(\npreferers{z}{x} > n/2\), which is a contradiction.
+      \item Therefore, a CP is also a PP.
       \end{itemize}
-    \item Therefore, a CP is also a PP.
     \end{enumerate}
   \end{proof}
 
-  From now on, we contstrain ourselves to \(\RR^2\).  
+  From now on, we contstrain ourselves to PPs in \(\RR^2\).  
 \end{frame}
 
 
@@ -232,9 +232,9 @@
 \end{frame}
 
 
-\begin{frame}{Tukey depth condition}
-  This condition is used to check if a candidate point is a valid PP. \\~\\
-  
+\begin{frame}{\enquote{Tukey depth condition}}
+  This neccessary and sufficient condition is used to decide whether a candidate point is a valid
+  PP.
   \begin{lemma}[]  % Lemma 3
     In \(\RR^2\), \(\Delta\) is a plurality point iff for any line \(L\) through \(\Delta\), \(n^+_L
     \leq n/2\) and \(n^-_L \leq n/2\). 
@@ -242,22 +242,22 @@
 %   \begin{proof}
 %   \end{proof}
   \eqspacing{1ex}{1ex}
-  This can be determined by the number
+  It is equivalent checking if
   \begin{equation*}
     \min_{L \in \mathcal{L}_{\Delta}} \{\lvert V \cup \gamma \rvert : \text{\(\gamma\) is a closed halfspace
-      separated by \(L\)}\},
+      separated by \(L\)}\} \geq n/2,
   \end{equation*}
-  where \(\mathcal{L}_{\Delta}\) is the space of lines through \(\Delta\), is called \textit{Tukey
-    depth} of \(\Delta\) with respect to \(V\).
+  where \(\mathcal{L}_{\Delta}\) is the space of lines through \(\Delta\). The quantity on the left
+  is called \textit{Tukey depth} of \(\Delta\) with respect to \(V\).
 \end{frame}
 
 
 \begin{frame}{Non-collinear case \& medians}
-  \begin{lemma}  % Lemma 4
+  \begin{lemma}[Non-collinear candidates]  % Lemma 4
     If not all voters in \(V\) are collinear, then
     \begin{enumerate}
     \item \(\Delta_V \subseteq \mathcal{M}_V\), and
-    \item \(\lvert\Delta_{v}\rvert \in \{0, 1\}\).
+    \item \(\lvert\Delta_{v}\rvert = 0\), or \(\lvert\Delta_{v}\rvert = 1\).
     \end{enumerate}
   \end{lemma} ~\\
 %   \begin{proof}
@@ -271,25 +271,15 @@
   These lemmata reduce the possibilities in the non-collinear case further to \order{1} candidate
   points.
   \begin{lemma}[\(\Delta \in V\)]  % Lemma 5
-    If \(\Delta\) is a PP of \(V\), and \(\Delta \in V\), then \(\Delta \in C\), and
+    If \(\Delta\) is a PP of \(V\), and \(\Delta \in V\), then \(\Delta \in C\), with
     \(V \cup C \leq 2^d\).
   \end{lemma}
   \begin{lemma}[\(\Delta \not\in V\)] % Lemma 6
-    If \(\Delta \not\in V\), then \(\Delta\) is a PP iff \(n^+_L = n^-_L\) for each line \(L\) passing
-    through \(\Delta\). 
+    If \(\Delta \not\in V\), and \(L\) is a separating line through \(\Delta\) (ie., \(n_L = 0\)),
+    then \(\Delta\) is the intersection of the internal tangents of the convex hulls of \(V_L^+\) and
+    \(V_L^-\).
   \end{lemma}
-%   \begin{proof}
-%   \end{proof}
 \end{frame}
-
-% \begin{frame}{\(\Delta\) is not a voter}
-%   \begin{lemma}
-%     If \(\Delta \nin V\), then \(\Delta\) is a PP iff \(n^+_L = n^-_L\) for each line \(L\) passing
-%     through \(\Delta\). 
-%   \end{lemma}
-% %   \begin{proof}
-% %   \end{proof}
-% \end{frame}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -395,7 +385,8 @@
 \begin{frame}{Conclusion}
   \begin{itemize}
   \item In Euclidean space, plurality points and Condorcet points are equivalent notions
-  \item In \(\RR^2\), they can be calculated in \(\mathcal{O}(n \log n)\) time
+  \item In \(\RR^2\), they can be calculated in \(\mathcal{O}(n \log n)\) time, using the presented
+    algorithm
   \item This can be generalized to \(\RR^d\) in \(\mathcal{O}(n^{d-1} \log n)\) time
   \end{itemize}
 \end{frame}
