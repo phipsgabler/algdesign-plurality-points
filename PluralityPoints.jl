@@ -14,7 +14,7 @@ include("geometry.jl")
 export Point, Rectangle
 export verify_candidates, internal_tangent_intersection, tukeydepth
 export plurality_points
-    
+
 
 """
     select(xs::Array, i::Integer, parts::Int = 5)::T
@@ -327,67 +327,6 @@ function plurality_points(V::Vector{Point})
 end
 
 
-####################################################################################################
-# TEST FUNCTIONS
-####################################################################################################
-
-
-function test_select(;trials = 100, size = 20)
-    @assert all(1:trials) do nix
-        x = rand(1:10, size)
-        sort(x) == [select(x, k) for k in 1:size]
-    end
-end
-
-function test_tukey(;samples = 10, plot = false)
-    xs, ys = randn(Float, samples), randn(Float, samples)
-    testpoint = Point(rand(Float), rand(Float))
-
-    if plot
-        scatter(xs, ys, color = "r")
-        scatter(testpoint.x, testpoint.y, color = "g")
-    end
-    
-    tukeydepth(testpoint, map(Point, xs, ys))
-end
-
-function test_tukey2(;samples = 10, plot = false)
-    # generate points on a circle, and test one point within
-    const dist = MvNormal(eye(2))
-    coords = mapslices(normalize, rand(dist, samples), 1)
-    xs, ys = coords[1, :], coords[2, :]
-    testpoint = Point(0, 0)
-
-    if plot
-        scatter(xs, ys, color = "r")
-        scatter(testpoint.x, testpoint.y, color = "g")
-    end        
-    
-    tukeydepth(testpoint, map(Point, xs, ys))
-end
-
-# fun fact: if the direction of points is uniform, the tukey depth grows linearly with the
-# number of points:
-# ms = [mean(PluralityPoints.test_tukey2(samples = s) for _ in 1:100) for s in 1:100]
-# ms2 = [mean(PluralityPoints.test_tukey(samples = s) for _ in 1:100) for s in 1:100]
-# plot(1:100, ms2)
-
-
-function test_tangent_intersection(;samples = 10, plot = false)
-    xs, ys = sort(rand(Float, samples)), rand(Float, samples)
-    i = get(internal_tangent_intersection(map(Point, xs[1:nₗ], ys[1:nₗ]),
-                                          map(Point, xs[nₗ+1:end], ys[nₗ+1:end])))
-
-    if plot
-        scatter(xs[1:nₗ], ys[1:nₗ], color = "r")
-        scatter(xs[nₗ+1:end], ys[nₗ+1:end], color = "y")
-        scatter(i.x, i.y, color = "b")
-    end
-
-    return i
-end
-
-
 function plurality_points_animated(V::Vector{Point})
     n = length(V)
 
@@ -455,6 +394,68 @@ function plurality_points_animated(V::Vector{Point})
     end
 end
 
+
+####################################################################################################
+# TESTING FUNCTIONS
+####################################################################################################
+
+
+function test_select(;trials = 100, size = 20)
+    @assert all(1:trials) do nix
+        x = rand(1:10, size)
+        sort(x) == [select(x, k) for k in 1:size]
+    end
+end
+
+function test_tukey(;samples = 10, plot = false)
+    xs, ys = randn(Float, samples), randn(Float, samples)
+    testpoint = Point(rand(Float), rand(Float))
+
+    if plot
+        scatter(xs, ys, color = "r")
+        scatter(testpoint.x, testpoint.y, color = "g")
+    end
+    
+    tukeydepth(testpoint, map(Point, xs, ys))
+end
+
+function test_tukey2(;samples = 10, plot = false)
+    # generate points on a circle, and test one point within
+    const dist = MvNormal(eye(2))
+    coords = mapslices(normalize, rand(dist, samples), 1)
+    xs, ys = coords[1, :], coords[2, :]
+    testpoint = Point(0, 0)
+
+    if plot
+        scatter(xs, ys, color = "r")
+        scatter(testpoint.x, testpoint.y, color = "g")
+    end        
+    
+    tukeydepth(testpoint, map(Point, xs, ys))
+end
+
+# fun fact: if the direction of points is uniform, the tukey depth grows linearly with the
+# number of points:
+# ms = [mean(PluralityPoints.test_tukey2(samples = s) for _ in 1:100) for s in 1:100]
+# ms2 = [mean(PluralityPoints.test_tukey(samples = s) for _ in 1:100) for s in 1:100]
+# plot(1:100, ms2)
+
+
+function test_tangent_intersection(;samples = 10, plot = false)
+    xs, ys = sort(rand(Float, samples)), rand(Float, samples)
+    i = get(internal_tangent_intersection(map(Point, xs[1:nₗ], ys[1:nₗ]),
+                                          map(Point, xs[nₗ+1:end], ys[nₗ+1:end])))
+
+    if plot
+        scatter(xs[1:nₗ], ys[1:nₗ], color = "r")
+        scatter(xs[nₗ+1:end], ys[nₗ+1:end], color = "y")
+        scatter(i.x, i.y, color = "b")
+    end
+
+    return i
+end
+
+
 function test_plurality_points1(;samples = 10)
     xs, ys = rand(Float64, samples), rand(Float64, samples)
     points = [Point(x, y) for (x, y) in zip(xs, ys)]
@@ -464,51 +465,27 @@ function test_plurality_points1(;samples = 10)
     plurality_points(points)
 end
 
-function test_plurality_points2(;samples = 10, plot = false)
-    xs, ys = rand(Float64, samples), rand(Float64, samples)
-    points = [Point(x, y) for (x, y) in zip(xs, ys)]
-    pp = plurality_points(points)
 
-    if plot
-        scatter(xs, ys, color = "r")
-        scatter([p.x for p in pp], [p.y for p in pp], color = "g")
-    end
-    
-    return pp
-end
-
-function test_plurality_points3()
+function test_plurality_points1()
     plurality_points_animated([Point(0.0, 0.0), Point(-1.0, 0.0), Point(-0.5, 0.0),
                                Point(1.0, 0.0), Point(0.0, -1.0), Point(0.0, 1.0)])
 end
 
 
-
-
-
-function findexample(samples = 5, maxiterations = 100)
-    xs, ys = rand(Float64, samples), rand(Float64, samples)
-    testpoints = [Point(x, y) for (x, y) in zip(xs, ys)]            
-    pp = plurality_points(testpoints)
-    i = 1
-    
-    while isempty(pp)
-        i += 1
+function findexample(;samples = 6, maxiterations = 100)
+    for i = 1:maxiterations
         xs, ys = rand(Float64, samples), rand(Float64, samples)
-        testpoints = [Point(x, y) for (x, y) in zip(xs, ys)]            
+        testpoints = map(Point, xs, ys)           
         pp = plurality_points(testpoints)
 
-        if i > maxiterations
-            warn("No example found")
-            return
+        if !isempty(pp)
+            info("Example found after ", i, " iterations")
+            plurality_points_animated(testpoints)
+            return pp
         end
     end
 
-    info("Example found after ", i, " iterations")
-    pp = plurality_points(testpoints; debug = true)
-    
-    scatter(xs, ys, marker = "o", color = "b")
-    scatter([p.x for p in pp], [p.y for p in pp], marker = "o", color = "r")
+    info("No example found after ", maxiterations, " iterations")
 end
 
 
