@@ -30,12 +30,8 @@
 \useinnertheme{circles}
 \useoutertheme{split}
 \setbeamercolor{structure}{fg=textblue}
-%\setbeamercolor{block body alerted}{bg=normal text.bg!90!black}
 \setbeamercolor{block body}{bg=normal text.bg!90!black}
-%\setbeamercolor{block body example}{bg=normal text.bg!90!black}
-%\setbeamercolor{block title alerted}{use={normal text,alerted text},fg=alerted text.fg!75!normal text.fg,bg=normal text.bg!75!black}
 \setbeamercolor{block title}{fg=black, bg=textblue!90}
-%\setbeamercolor{block title example}{use={normal text,example text},fg=example text.fg!75!normal text.fg,bg=normal text.bg!75!black}
 
 % smaller footnotes; see: http://tex.stackexchange.com/a/192652/46356
 \setbeamertemplate{footnote}{%
@@ -65,6 +61,14 @@
   \setlength\abovedisplayskip{#1}%
   \setlength\belowdisplayskip{#2}%
 }
+
+
+% biblatex
+\usepackage[backend=biber]{biblatex}
+% patch doi entries to favour openly available links
+\DeclareFieldFormat{doi}{\mkbibacro{DOI}\addcolon\space\href{http://doai.io/#1}{#1}}
+
+\addbibresource{refs.bib}
 
 \def\qedsymbol{}
 
@@ -389,6 +393,13 @@
     algorithm
   \item This can be generalized to \(\RR^d\) in \(\mathcal{O}(n^{d-1} \log n)\) time
   \end{itemize}
+\end{frame}
+
+
+\begin{frame}{Bibliography}
+  \renewcommand*{\bibfont}{\small}
+  \nocite{*}
+  \printbibliography
 \end{frame}
 
 \end{document}
