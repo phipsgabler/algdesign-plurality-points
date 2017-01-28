@@ -10,6 +10,7 @@ using Distributions
 
 import Base
 include("geometry.jl")
+include("tests.jl")
 
 export Point, Rectangle
 export verify_candidates, internal_tangent_intersection, tukeydepth
@@ -17,7 +18,7 @@ export plurality_points
 
 
 """
-    select(xs::Array, i::Integer, parts::Int = 5)::T
+    select{T}(xs::Vector{T}, k::Integer, parts::Int = 5)::T
 
 Select the `i`-th largest element from `xs` in linear time, using the algorithm
 from "Cormen, T.H., Leiserson, C.E., Rivest, R.L., Stein, C.: Introduction to Algorithms".
@@ -211,6 +212,15 @@ function tukeydepth(θ::Point, points::Vector{Point})::Int
 end
 
 
+"""
+    internal_tangent(A, B, direction::Symbol)::Nullable{Tuple{Float, Float}}
+
+Calculates an internal tangent of the convex hulls of the point sets `A` and `B`. The
+`direction` can be either `:Min` or `:Max`, depending on which of the tangents is to be found.
+The return value consists of the `k` and `d` of the usual parametrization `y = k*x + d`.
+
+Note that `A` must be left of `B` for `:Max`, and right for `:Min`.
+"""
 function internal_tangent(A, B, direction::Symbol)::Nullable{Tuple{Float, Float}}
     # ATTENTION: A needs to be "left" of B!
     
@@ -243,9 +253,9 @@ end
 
 
 """
-    internal_tangent_intersection(A::Vector{Point}, B::Vector{Point})::Nullable{Point}
+    intersect_lines(l1::Tuple{Float, Float}, l2::Tuple{Float, Float})::Nullable{Point}
 
-Compute intersection of the internal tangents of (disjoint and separable) point sets `A` and `B`.
+Compute intersection of two lines of the form `y = k*x + d`, given tuples of `k` and `d`.
 """
 function intersect_lines(l1::Tuple{Float, Float}, l2::Tuple{Float, Float})::Nullable{Point}
     k₁, d₁ = l1
@@ -263,7 +273,7 @@ end
 
 
 """
-    internal_tangent_intersection(A::Vector{Point}, B::Vector{Point})::Nullable{Point}
+    internal_tangent_intersection(A, B)::Nullable{Point}
 
 Compute intersection of the internal tangents of (disjoint and separable) point sets `A` and `B`.
 """
@@ -279,9 +289,20 @@ function internal_tangent_intersection(A, B)::Nullable{Point}
 end
 
 
+"""
+    verify_candidates(C, V)
+
+Filter out all points from `C` which are not valid plurality points in `V`.
+"""
 verify_candidates(C, V) = filter(p -> tukeydepth(p, V) >= length(V) / 2, C)
 
 
+"""
+    plurality_points(V::Vector{Point})
+
+Calculate all plurality points of the point set given by `V`. In the case of collinear points,
+this returns a `Rectangle` object.
+"""
 function plurality_points(V::Vector{Point})
     n = length(V)
 
@@ -327,6 +348,12 @@ function plurality_points(V::Vector{Point})
 end
 
 
+"""
+    plurality_points_animated(V::Vector{Point})
+
+Plot a graph and print information about the calculation of plurality points of the set `V`.
+Candiate points are plotted in yellow, actual plurality points in red.
+"""
 function plurality_points_animated(V::Vector{Point})
     n = length(V)
 
@@ -336,6 +363,9 @@ function plurality_points_animated(V::Vector{Point})
     x_l = select(V_x, cld(n, 2))
     y_h = select(V_y, cld(n + 1, 2))
     y_l = select(V_y, cld(n, 2))
+
+    xlim(minimum(V_x) - 0.5, maximum(V_x) + 0.5)
+    ylim(minimum(V_y) - 0.5, maximum(V_y) + 0.5)
     
     scatter(V_x, V_y, marker = "o", color = "b")
     plot([x_l, x_h, x_h, x_l, x_l], [y_l, y_l, y_h, y_h, y_l], color = "k")
@@ -349,6 +379,7 @@ function plurality_points_animated(V::Vector{Point})
             unique_candidate = collect(C)[1]
             info("Unique median")
             info("Tukey depth $(tukeydepth(unique_candidate, V)), should be ≥ $(length(V) / 2)")
+            
             scatter(unique_candidate.x, unique_candidate.y, marker = "x", color = "y")
             for p in verify_candidates(C, V)
                 scatter(p.x, p.y, marker = "*", color = "r")
@@ -393,100 +424,5 @@ function plurality_points_animated(V::Vector{Point})
         end
     end
 end
-
-
-####################################################################################################
-# TESTING FUNCTIONS
-####################################################################################################
-
-
-function test_select(;trials = 100, size = 20)
-    @assert all(1:trials) do nix
-        x = rand(1:10, size)
-        sort(x) == [select(x, k) for k in 1:size]
-    end
-end
-
-function test_tukey(;samples = 10, plot = false)
-    xs, ys = randn(Float, samples), randn(Float, samples)
-    testpoint = Point(rand(Float), rand(Float))
-
-    if plot
-        scatter(xs, ys, color = "r")
-        scatter(testpoint.x, testpoint.y, color = "g")
-    end
-    
-    tukeydepth(testpoint, map(Point, xs, ys))
-end
-
-function test_tukey2(;samples = 10, plot = false)
-    # generate points on a circle, and test one point within
-    const dist = MvNormal(eye(2))
-    coords = mapslices(normalize, rand(dist, samples), 1)
-    xs, ys = coords[1, :], coords[2, :]
-    testpoint = Point(0, 0)
-
-    if plot
-        scatter(xs, ys, color = "r")
-        scatter(testpoint.x, testpoint.y, color = "g")
-    end        
-    
-    tukeydepth(testpoint, map(Point, xs, ys))
-end
-
-# fun fact: if the direction of points is uniform, the tukey depth grows linearly with the
-# number of points:
-# ms = [mean(PluralityPoints.test_tukey2(samples = s) for _ in 1:100) for s in 1:100]
-# ms2 = [mean(PluralityPoints.test_tukey(samples = s) for _ in 1:100) for s in 1:100]
-# plot(1:100, ms2)
-
-
-function test_tangent_intersection(;samples = 10, plot = false)
-    xs, ys = sort(rand(Float, samples)), rand(Float, samples)
-    i = get(internal_tangent_intersection(map(Point, xs[1:nₗ], ys[1:nₗ]),
-                                          map(Point, xs[nₗ+1:end], ys[nₗ+1:end])))
-
-    if plot
-        scatter(xs[1:nₗ], ys[1:nₗ], color = "r")
-        scatter(xs[nₗ+1:end], ys[nₗ+1:end], color = "y")
-        scatter(i.x, i.y, color = "b")
-    end
-
-    return i
-end
-
-
-function test_plurality_points1(;samples = 10)
-    xs, ys = rand(Float64, samples), rand(Float64, samples)
-    points = [Point(x, y) for (x, y) in zip(xs, ys)]
-    xlim(0, 1)
-    ylim(0, 1)
-    plurality_points_animated(points)
-    plurality_points(points)
-end
-
-
-function test_plurality_points1()
-    plurality_points_animated([Point(0.0, 0.0), Point(-1.0, 0.0), Point(-0.5, 0.0),
-                               Point(1.0, 0.0), Point(0.0, -1.0), Point(0.0, 1.0)])
-end
-
-
-function findexample(;samples = 6, maxiterations = 100)
-    for i = 1:maxiterations
-        xs, ys = rand(Float64, samples), rand(Float64, samples)
-        testpoints = map(Point, xs, ys)           
-        pp = plurality_points(testpoints)
-
-        if !isempty(pp)
-            info("Example found after ", i, " iterations")
-            plurality_points_animated(testpoints)
-            return pp
-        end
-    end
-
-    info("No example found after ", maxiterations, " iterations")
-end
-
 
 end # module
