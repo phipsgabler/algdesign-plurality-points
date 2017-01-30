@@ -43,7 +43,8 @@
 \setlength\footnotesep{0pt}
 
 \author{Philipp Gabler}
-\title{Plurality Points and Condorcet Points\\ in Euclidean Space}
+\title[Plurality Points\\ and Condorcet Points\\ in Euclidean Space]{%
+  Computing Plurality Points\\ and Condorcet Points\\ in Euclidean Space}
 \date{}
 
 
@@ -90,21 +91,23 @@
   \begin{enumerate}
   \item Informal introduction
   \item Notation
-  \item Neccessary lemmata by case
+  \item Idea of algorithm, neccessary lemmata by case
   \item Algorithm
   \item Analysis of algorithm
   \end{enumerate}
 \end{frame}
 
 \begin{frame}{Informal description}
-  We can represent opinion standpoints by points in space.  Goal: find a (spacial) equilibrium
-  between these quantified \enquote{opinions}.
+  We can represent opinion standpoints by points in space.  There are several ways define a
+  (spacial) equilibrium between these quantified \enquote{opinions}.
   
   \begin{itemize}
   \item Voters: Multiset in Euclidean space (\(\RR^d\) with \(\ell_2\) norm)
   \item Plurality point: Closer to at least as many voters as any other point
   \item Condorcet point: No other point is closer to an absolute majority of voters
   \end{itemize}
+
+  Problem: given the voters, find plurality and Condorcet points.
 \end{frame}
 
 
@@ -172,7 +175,7 @@
   \end{definition}
   \begin{definition}[Condorcet point (CP)]
     \eqspacing{0pt}{0pt}
-    \(\Delta \in \RR^d\) is a plurality point iff
+    \(\Delta \in \RR^d\) is a Condorcet point iff
     \begin{equation*}
       \forall \theta \in \RR^d : \npreferers{\theta}{\Delta} \leq n/2
     \end{equation*}
@@ -189,24 +192,25 @@
     \item A PP is a CP by definition.
     \item
       \begin{itemize}
-      \item Assume \(x\) is a CP, but not a PP, so
-        \(\exists y: \npreferers{x}{y} < \npreferers{y}{x}\).
-      \item Let \(z\) be the midpoint of \(x, y\).  Then for each
-        \(c \in \preferers[\succeq]{y}{x}\), \(d(c, z) < d(c, x)\).
-      \item Thus, \(\npreferers{z}{x} > n/2\), which is a contradiction.
+      \item Assume \(\Delta\) is a CP, but not a PP, so
+        \(\exists \delta: \npreferers{\Delta}{\delta} < \npreferers{\delta}{\Delta}\).
+      \item Let \(m\) be the midpoint of \(\Delta, \delta\).  Then for each
+        \(v \in \preferers[\succeq]{\delta}{\Delta}\),
+        \(d(v, m) < d(v, \Delta)\).
+      \item Thus, \(\npreferers{m}{\Delta} > n/2\), which is a contradiction.
       \item Therefore, a CP is also a PP.
       \end{itemize}
     \end{enumerate}
   \end{proof}
 
-  From now on, we contstrain ourselves to PPs in \(\RR^2\).  
+  From now on, we constrain ourselves to PPs in \(\RR^2\).  
 \end{frame}
 
 
 \begin{frame}{Idea behind algorithm}
   The presented algorithm works by successively cutting down the space of possible PPs via a series
   of case distinctions, until only \order{1} candidate points remain, which can be checked
-  exhaustively. For this purpose, the following series of lemmata are employed. \\~\\
+  exhaustively. For this purpose, the following series of lemmata is employed. \\~\\
 
   Furthermore:
   \begin{definition}[]
@@ -279,9 +283,9 @@
     \(V \cup C \leq 2^d\).
   \end{lemma}
   \begin{lemma}[\(\Delta \not\in V\)] % Lemma 6
-    If \(\Delta \not\in V\), and \(L\) is a separating line through \(\Delta\) (ie., \(n_L = 0\)),
-    then \(\Delta\) is the intersection of the internal tangents of the convex hulls of \(V_L^+\) and
-    \(V_L^-\).
+    If \(\Delta\) is a PP of \(V\), \(\Delta \not\in V\), and \(L\) is a separating line through
+    \(\Delta\) (ie., \(n_L = 0\)), then \(\Delta\) is the intersection of the internal tangents of
+    the convex hulls of \(V_L^+\) and \(V_L^-\).
   \end{lemma}
 \end{frame}
 
@@ -312,12 +316,12 @@
     tangents between the convex hulls of V and W. The tangents can be found by solving the linear
     program
     \begin{align*}
-      &\min_{k, d}\, F(k, d) = k, \quad \text{s.t.}\\
+      &\max_{k, d}\, F(k, d) = k, \quad \text{s.t.}\\
       &\forall\; v \in V: v_y \leq k  v_x + d \quad \text{and} \\
       &\forall\; w \in W: w_y \geq k  w_x + d,
     \end{align*}
-    and the opposite formulation. Linear programming with fixed dimension can be done in linear time
-    in the number of constraints, by Megiddo (1984).
+    and the opposite formulation (minimizing with \(V\) and \(W\) swapped). Linear programming with
+    fixed dimension can be done in linear time in the number of constraints, by Megiddo (1984).
   \end{itemize}
 \end{frame}
 
@@ -393,6 +397,11 @@
     algorithm
   \item This can be generalized to \(\RR^d\) in \(\mathcal{O}(n^{d-1} \log n)\) time
   \end{itemize}
+
+  \vspace{1cm}
+  \begin{block}{Working implementation (in Julia)}
+    \url{https://github.com/phipsgabler/plurality-points}
+  \end{block}
 \end{frame}
 
 
