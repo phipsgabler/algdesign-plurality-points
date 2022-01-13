@@ -1,3 +1,5 @@
+[![CC BY 4.0][cc-by-shield]][cc-by]
+
 # Plurality Points
 
 This repository contains the [slides](./presentation/presentation.pdf) and some code for a seminar talk I gave 
@@ -17,8 +19,13 @@ These also include the most important references for understanding the main pape
 
 The file [`depth.f`](./depth.f) contains Fortran code from the R implementation of the algorithm of Rousseeuw and Struyf
 (see [here](https://CRAN.R-project.org/package=depth)), which is licensed under
-[GPL-2](https://cran.r-project.org/web/licenses/GPL-2).  I removed the parts of the code which are unneccessary for 
-my purposes.
+[GPL-2](https://cran.r-project.org/web/licenses/GPL-2).  It is a literal copy I used for reference, and just removed the parts of the code which are unneccessary for my purposes.
 
-My code is licensed under the MIT license.  With the slides, do anything you want.
+The [rest of the code](./src) contains a derivatve of this code, and is therefore licensed under [GPL-2](https://cran.r-project.org/web/licenses/GPL-2) as well.
+
+The [presentation](./presentation) is licensed under a
+[Creative Commons Attribution 4.0 International License][cc-by].
+
+[cc-by]: http://creativecommons.org/licenses/by/4.0/
+[cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
 
